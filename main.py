@@ -1,5 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 import shutil
 import os
 from ultralytics import YOLO
@@ -11,10 +11,11 @@ model = YOLO('yolov8n.pt')
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
     file_extension = file.filename.split('.')[-1].lower()
-    valid_extensions = ["jpg", "jpeg", "png", "bmp", "tiff", "tif", "gif"]
+    image_extensions = ["jpg", "jpeg", "png", "bmp", "tiff", "tif"]
+    video_extensions = ["mp4", "avi", "mov", "mkv", "gif", "wmv"]
     
-    if file_extension not in valid_extensions:
-        raise HTTPException(status_code=400, detail="Unsupported file type.")
+    if file_extension not in image_extensions + video_extensions:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
     
     input_path = f"input.{file_extension}"
     
@@ -25,16 +26,20 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to save input file: {str(e)}")
     
     try:
-        results = model(input_path)
-        
-        output_image_path = results[0].save()
+        results = model(input_path, save=True, project="./", name="prediction", exist_ok=True)
         
         os.remove(input_path)
         
-        if os.path.exists(output_image_path):
-            return FileResponse(output_image_path)
+        if file_extension in image_extensions:
+            if os.path.exists("E:\ml-deployment\prediction\input.jpg"):
+                return FileResponse(".\prediction\input.jpg")
+            else:
+                raise HTTPException(status_code=500, detail="Output image not found after inference")
         else:
-            raise HTTPException(status_code=500, detail="Output image not found after inference.")
+            if os.path.exists("E:\ml-deployment\prediction\input.avi"):
+                return FileResponse(".\prediction\input.avi")
+            else:
+                raise HTTPException(status_code=500, detail="Output image not found after inference")
     
     except Exception as e:
         if os.path.exists(input_path):
