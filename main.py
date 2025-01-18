@@ -26,18 +26,18 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to save input file: {str(e)}")
     
     try:
-        results = model(input_path, save=True, project="./", name="prediction", exist_ok=True)
+        results = model(input_path, save=True, project=".//", name="prediction", exist_ok=True)
         
         os.remove(input_path)
         
         if file_extension in image_extensions:
-            if os.path.exists("E:\ml-deployment\prediction\input.jpg"):
-                return FileResponse(".\prediction\input.jpg")
+            if os.path.exists(".//prediction//input.jpg"):
+                return FileResponse(".//prediction//input.jpg")
             else:
                 raise HTTPException(status_code=500, detail="Output image not found after inference")
         else:
-            if os.path.exists("E:\ml-deployment\prediction\input.avi"):
-                return FileResponse(".\prediction\input.avi")
+            if os.path.exists(".//prediction//input.avi"):
+                return FileResponse(".//prediction//input.avi")
             else:
                 raise HTTPException(status_code=500, detail="Output image not found after inference")
     
